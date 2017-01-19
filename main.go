@@ -4,17 +4,20 @@ import (
   "net/http"
   "fmt"
   "html/template"
-  "github.com/mattn/go-sqlite3"
+  _ "github.com/mattn/go-sqlite3"
   "database/sql"
 )
 
 type Page struct{
   Name string
-
+  DBStatus bool
 }
 
 func main() {
   templates := template.Must(template.ParseFiles("templates/index.html"))
+
+  db, _ := sql.Open("sqlite3", "dev.db")
+  
 
   http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request){
     p := Page{Name: "Gopher"}
@@ -22,11 +25,12 @@ func main() {
     if name := r.FormValue("name"); name !=""{
       p.Name = name
     }
+    p.DBStatus = db.Ping() == nil
+
     if err := templates.ExecuteTemplate(w, "index.html", p);
     err != nil {
     http.Error(w, err.Error(), http.StatusInternalServerError)
     }
-    fmt.Fprintf(w, "<h1>Hello HandleFunc</h1>")
   })
 
   fmt.Println(http.ListenAndServe(":8000", nil))

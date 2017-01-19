@@ -6,5 +6,12 @@
   </head>
   <body>
     <h1>Hello {{.Name}}</h1>
+
+    {{if .DBStatus}}
+      <p> db connection is ALIVE </p>
+    {{else}}
+      <p> so DEAD </p>
+    {{end}}
+
   </body>
 </html>

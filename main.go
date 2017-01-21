@@ -7,6 +7,9 @@ import (
   _ "github.com/mattn/go-sqlite3"
   "database/sql"
   "encoding/json"
+  "net/url"
+  "io/ioutil"
+  "encoding/xml"
 )
 
 type Page struct{
@@ -15,10 +18,10 @@ type Page struct{
 }
 
 type SearchResult struct {
-  Title string
-  Author string
-  Year string
-  Id string
+  Title string `xml:"title,attr"`
+  Author string `xml:"author,attr"`
+  Year string `xml:"hyr,attr"`
+  Id string `xml:"owi,attr"`
 }
 
 func main() {
@@ -41,12 +44,18 @@ func main() {
     }
   })
   http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request){
-    results := []SearchResult{
-      SearchResult{"Mody Dick", "Herman Melville", "1851", "11111"},
-      SearchResult{"Huckleberry Finn", "Mark Twain", "1884", "22222"},
-      SearchResult{"The Catcher in the Rye", "JD Salinger", "1951", "33"},
+    // results := []SearchResult{
+    //   SearchResult{"Mody Dick", "Herman Melville", "1851", "11111"},
+    //   SearchResult{"Huckleberry Finn", "Mark Twain", "1884", "22222"},
+    //   SearchResult{"The Catcher in the Rye", "JD Salinger", "1951", "33"},
+    // }
+    var results []SearchResult
+    var err error
 
+    if results, err = search(r.FormValue("Search")); err!=nil{
+      http.Error(w, err.Error(), http.StatusInternalServerError)
     }
+
     encoder := json.NewEncoder(w)
     if err := encoder.Encode(results); err != nil{
       http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -54,4 +63,27 @@ func main() {
   })
 
   fmt.Println(http.ListenAndServe(":8000", nil))
+}
+
+type ClassifySearchResponse struct{
+  Results []SearchResult `xml:"works>work"`
+}
+
+func search(query string)([]SearchResult, error){
+  var resp *http.Response
+  var err error
+
+  if resp, err = http.Get("http://classify.oclc.org/classify2/Classify?&summary=true&title=" + url.QueryEscape(query)); err!=nil{
+    return []SearchResult{}, err
+  }
+
+  defer resp.Body.Close()
+  var body []byte
+  if body, err = ioutil.ReadAll(resp.Body); err!=nil{
+    return []SearchResult{}, err
+  }
+
+  var c ClassifySearchResponse
+  err = xml.Unmarshal(body, &c)
+  return c.Results, err
 }

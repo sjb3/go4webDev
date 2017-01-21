@@ -3,17 +3,19 @@
   <head>
     <meta charset="utf-8">
     <title>My books</title>
-    <link></link>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel='stylesheer' href='../app.css'></link>
   </head>
   <body>
 
-    <form id="search-form">
+    <form id="search-form" onsubmit="return false">
+      <br />
+      <br />
       <input name="search" />
-      <input type="submit" onClick="submitSearch()" value="Search" placeholder="Type here">
+      <input type="submit" onclick="submitSearch()" value="Search" placeholder="Type here">
     </form>
-
+      <br />
+      <br />
     <table width="100%">
       <thread>
         <tr style="text-align: left;">
@@ -32,6 +34,18 @@
           url: "/search",
           method: "POST",
           data: $("#search-form").serialize(),
+          success: function(rawData){
+            var parsed = JSON.parse(rawData);
+            if (!parsed) return;
+
+            var searchResults = $("#search-results");
+            searchResults.empty();
+
+            parsed.forEach(function(result){
+                var row = $("<tr><td>" + result.Title + "</td><td>"+ result.Author + "</td><td>"+ result.Year +"</td><td>"+ result.Id +"</td></tr>");
+                searchResults.append(row);
+            });
+          }
         });
         return false;
       }

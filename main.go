@@ -24,12 +24,12 @@ type SearchResult struct {
   ID string `xml:"owi,attr"`
 }
 
-// var db *sql.DB
+var db *sql.DB
 
 func main() {
   templates := template.Must(template.ParseFiles("templates/index.html"))
 
-  db, _ := sql.Open("sqlite3", "dev.db")
+  db, _ = sql.Open("sqlite3", "dev.db")
 
   mux := http.NewServeMux()
 
@@ -67,11 +67,6 @@ func main() {
     if book, err = fetch(r.FormValue("id")); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
     }
-    // fmt.Println(book)
-
-    if err = db.Ping(); err != nil {
-      http.Error(w, err.Error(), http.StatusInternalServerError)
-    }
 
     _, err = db.Exec("insert into books  (pk, title, author, id, classification) values (?, ?, ?, ?, ?)",
             nil, book.BookData.Title, book.BookData.Author, book.BookData.ID, book.Classification.MostPopular)
@@ -82,9 +77,18 @@ func main() {
   })
 
   n := negroni.Classic()
+  n.Use(negroni.HandlerFunc(verifyDatabase))
   n.UseHandler(mux)
-  n.Run(":8080")
 
+  n.Run(":8080")
+}
+
+func verifyDatabase(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+  if err := db.Ping(); err != nil {
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  next(w, r)
 }
 
 type BookResponse struct {

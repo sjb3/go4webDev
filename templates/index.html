@@ -1,10 +1,10 @@
-<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
-    <title>My books</title>
+    <title>bibliophile!</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel='stylesheer' href='../app.css'></link>
+
     <style>
       #search-results tr:hover {
         background-color: lightgrey;
@@ -13,54 +13,59 @@
     </style>
   </head>
   <body>
-
-    <form id="search-form" onsubmit="return false">
-      <br />
-      <br />
+    <form onsubmit="return false;" id="search-form">
       <input name="search" />
-      <input type="submit" onclick="submitSearch()" value="Search" placeholder="Type here">
+      <input type="submit" value="Search" onclick="submitSearch()" />
     </form>
-      <br />
-      <br />
+
+    <br />
+    <br />
+
     <table width="100%">
-      <thread>
+      <thead>
         <tr style="text-align: left;">
           <th width="40%">Title</th>
           <th width="30%">Author</th>
           <th width="10%">Year</th>
-          <th width="20%">Id</th>
+          <th width="20%">ID</th>
         </tr>
-      </thread>
-      <tbody id="search-results"></tbody>
+      </thead>
+      <tbody id="search-results">
+      </tbody>
     </table>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
     <script type="text/javascript">
-      function submitSearch(){
+      function submitSearch() {
         $.ajax({
           url: "/search",
           method: "POST",
           data: $("#search-form").serialize(),
-          success: function(rawData){
-            var parsed = JSON.parse(rawData);
+          success: function(results) {
+            var parsed = JSON.parse(results);
             if (!parsed) return;
 
             var searchResults = $("#search-results");
             searchResults.empty();
 
-            parsed.forEach(function(result){
-                var row = $("<tr><td>" + result.Title + "</td><td>"+ result.Author + "</td><td>"+ result.Year +"</td><td>"+ result.ID +"</td></tr>");
-                searchResults.append(row);
-
-            row.on("click", function(){
-              $.ajax({
-                url: "/books/add?id=" + result.ID,
-                method: "GET"
-              })
-            })
-            });
+            for (var i = 0; i < parsed.length; ++i) {
+              var result = parsed[i];
+              var row = $("<tr><td>" + result.Title + "</td><td>" + result.Author + "</td><td>" + result.Year + "</td><td>" + result.ID + "</td></tr>");
+              setupSearchSelect(row, result.ID);
+              searchResults.append(row);
+            }
           }
         });
         return false;
+      }
+
+      function setupSearchSelect(row, id) {
+        row.on("click", function() {
+          $.ajax({
+            url: "/books/add?id=" + id,
+            method: "GET"
+          });
+        });
       }
     </script>
   </body>

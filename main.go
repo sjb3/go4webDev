@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -44,11 +43,6 @@ func main() {
   })
 
   http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
- // results := []SearchResult{
-    //   SearchResult{"Mody Dick", "Herman Melville", "1851", "11111"},
-    //   SearchResult{"Huckleberry Finn", "Mark Twain", "1884", "22222"},
-    //   SearchResult{"The Catcher in the Rye", "JD Salinger", "1951", "33"},
-    // }
     var results []SearchResult
     var err error
 
@@ -83,7 +77,7 @@ func main() {
     }
   })
 
-  fmt.Println(http.ListenAndServe(":8000", nil))
+  fmt.Println(http.ListenAndServe(":8080", nil))
 }
 
 type BookResponse struct {

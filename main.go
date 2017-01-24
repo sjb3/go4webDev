@@ -74,14 +74,14 @@ func main() {
   })
 
   mux.HandleFunc("/books/add", func(w http.ResponseWriter, r *http.Request) {
-    var book BookResponse
+    var book ClassifyBookResponse//BookResponse
     var err error
 
     if book, err = fetch(r.FormValue("id")); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
     }
 
-    _, err = db.Exec("insert into books  (pk, title, author, id, classification) values (?, ?, ?, ?, ?)",
+    result, err = db.Exec("insert into books  (pk, title, author, id, classification) values (?, ?, ?, ?, ?)",
             nil, book.BookData.Title, book.BookData.Author, book.BookData.ID, book.Classification.MostPopular)
 
     if err != nil {

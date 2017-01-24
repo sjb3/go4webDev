@@ -11,10 +11,17 @@ import (
   "io/ioutil"
   "github.com/urfave/negroni"
 )
+type Book struct {
+  PK int
+  Title string
+  Author string
+  Classification string
+}
 
 type Page struct {
-  Name string
-  DBStatus bool
+  // Name string
+  // DBStatus bool
+  Books []Book
 }
 
 type SearchResult struct {
@@ -34,12 +41,18 @@ func main() {
   mux := http.NewServeMux()
 
   mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-    p := Page{Name: "Gopher", DBStatus: false}
-    if name := r.FormValue("name"); name != "" {
-      p.Name = name
+    p := Page{Books: []Book{}}
+    rows, _ :=db.Query(""select pk, title, author, classification from books)
+    for rows.Next(){
+      var b Book
+      rows.Sca(&b.PK, &b.Title, &b.Author, &b.Classification)
+      p.Books = append(p.Books, b)
     }
+    // if name := r.FormValue("name"); name != "" {
+    //   p.Name = name
+    // }
 
-    p.DBStatus = db.Ping() == nil
+    // p.DBStatus = db.Ping() == nil
 
     if err := templates.ExecuteTemplate(w, "index.html", p); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)

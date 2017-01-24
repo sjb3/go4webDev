@@ -1,7 +1,6 @@
 package main
 
 import (
-  "fmt"
   "net/http"
   "html/template"
   _ "github.com/mattn/go-sqlite3"
@@ -10,11 +9,19 @@ import (
   "net/url"
   "encoding/xml"
   "io/ioutil"
+  "github.com/urfave/negroni"
 )
+type Book struct {
+  PK int
+  Title string
+  Author string
+  Classification string
+}
 
 type Page struct {
-  Name string
-  DBStatus bool
+  // Name string
+  // DBStatus bool
+  Books []Book
 }
 
 type SearchResult struct {
@@ -24,25 +31,35 @@ type SearchResult struct {
   ID string `xml:"owi,attr"`
 }
 
+var db *sql.DB
+
 func main() {
   templates := template.Must(template.ParseFiles("templates/index.html"))
 
-  db, _ := sql.Open("sqlite3", "dev.db")
+  db, _ = sql.Open("sqlite3", "dev.db")
 
-  http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-    p := Page{Name: "Gopher", DBStatus: false}
-    if name := r.FormValue("name"); name != "" {
-      p.Name = name
+  mux := http.NewServeMux()
+
+  mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+    p := Page{Books: []Book{}}
+    rows, _ :=db.Query(""select pk, title, author, classification from books)
+    for rows.Next(){
+      var b Book
+      rows.Sca(&b.PK, &b.Title, &b.Author, &b.Classification)
+      p.Books = append(p.Books, b)
     }
+    // if name := r.FormValue("name"); name != "" {
+    //   p.Name = name
+    // }
 
-    p.DBStatus = db.Ping() == nil
+    // p.DBStatus = db.Ping() == nil
 
     if err := templates.ExecuteTemplate(w, "index.html", p); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
     }
   })
 
-  http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+  mux.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
     var results []SearchResult
     var err error
 
@@ -56,16 +73,11 @@ func main() {
     }
   })
 
-  http.HandleFunc("/books/add", func(w http.ResponseWriter, r *http.Request) {
+  mux.HandleFunc("/books/add", func(w http.ResponseWriter, r *http.Request) {
     var book BookResponse
     var err error
 
     if book, err = fetch(r.FormValue("id")); err != nil {
-      http.Error(w, err.Error(), http.StatusInternalServerError)
-    }
-    fmt.Println(book)
-
-    if err = db.Ping(); err != nil {
       http.Error(w, err.Error(), http.StatusInternalServerError)
     }
 
@@ -77,7 +89,19 @@ func main() {
     }
   })
 
-  fmt.Println(http.ListenAndServe(":8080", nil))
+  n := negroni.Classic()
+  n.Use(negroni.HandlerFunc(verifyDatabase))
+  n.UseHandler(mux)
+
+  n.Run(":8080")
+}
+
+func verifyDatabase(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+  if err := db.Ping(); err != nil {
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  next(w, r)
 }
 
 type BookResponse struct {

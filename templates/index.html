@@ -2,7 +2,7 @@
   <head>
     <meta charset="utf-8">
     <title>bibliophile!</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"></link>
     <link rel='stylesheer' href='../app.css'></link>
 
     <style>
@@ -10,32 +10,78 @@
         background-color: lightgrey;
         cursor: pointer;
       }
+      #page-switcher{
+        width: 100%;
+        text-align: center;
+      }
+      #page-switcher button {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 1em;
+        padding: .3em;
+      }
     </style>
   </head>
   <body>
-    <form onsubmit="return false;" id="search-form">
-      <input name="search" />
-      <input type="submit" value="Search" onclick="submitSearch()" />
-    </form>
+    <div id="page-switcher">
+      <button onclick="showViewPage()" type="button" class="btn btn-info">View Library</button>
+      <button onclick="showSearchPage()" type="button" class="btn btn-primary">Add Books</button>
+    </div>
 
-    <br />
-    <br />
+    <div id="search-page" style="display: none;">
+      <form onsubmit="return false;" id="search-form">
+        <input name="search" />
+        <input type="submit" value="Search" onclick="submitSearch()" />
+      </form>
 
-    <table width="100%">
-      <thead>
-        <tr style="text-align: left;">
-          <th width="40%">Title</th>
-          <th width="30%">Author</th>
-          <th width="10%">Year</th>
-          <th width="20%">ID</th>
-        </tr>
-      </thead>
-      <tbody id="search-results">
-      </tbody>
-    </table>
+      <br />
+      <br />
+
+      <table width="100%">
+        <thead>
+          <tr style="text-align: left;">
+            <th width="40%">Title</th>
+            <th width="30%">Author</th>
+            <th width="10%">Year</th>
+            <th width="20%">ID</th>
+          </tr>
+        </thead>
+        <tbody id="search-results">
+        </tbody>
+      </table>
+      </div>
+
+      <div id="view-page">
+        <thead>
+          <tr style="text-align: left;">
+            <th width="45%">Title</th>
+            <th width="35%">Author</th>
+            <th width="25%">Classification</th>
+          </tr>
+        </thead>
+        <tbody id="view-results">
+          {{range .Books}}
+            <tr>
+              <td>{{.Title}}</td>
+              <td>{{.Author}}</td>
+              <td>{{.Classification}}</td>
+            </tr>
+          {{end}}
+
+        </tbody>
+      </div>
 
     <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
     <script type="text/javascript">
+
+      function showSearchPage(){
+        $("#search-page").show();
+        $("#view-page").hide();
+      }
+      function showViewPage(){
+        $("#search-page").hide();
+        $("#view-page").show();
+      }
       function submitSearch() {
         $.ajax({
           url: "/search",
@@ -62,8 +108,10 @@
       function setupSearchSelect(row, id) {
         row.on("click", function() {
           $.ajax({
-            url: "/books/add?id=" + id,
-            method: "GET"
+            url: "/books/add?id=" + result.ID,
+            method: "GET",
+              var book = JSON.parse(data);
+              if(!book) return;
           });
         });
       }
